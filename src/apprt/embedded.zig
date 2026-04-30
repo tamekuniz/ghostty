@@ -818,6 +818,10 @@ pub const Surface = struct {
         };
     }
 
+    pub fn setForegroundOverride(self: *Surface, rgb: ?terminal.color.RGB) void {
+        self.core_surface.setForegroundOverride(rgb);
+    }
+
     pub fn mouseButtonCallback(
         self: *Surface,
         action: input.MouseButtonState,
@@ -1754,6 +1758,22 @@ pub const CAPI = struct {
         };
 
         surface.colorSchemeCallback(scheme);
+    }
+
+    /// Override the foreground color of the surface (per-surface, opt-in).
+    /// When `clear` is true, reset to the configured foreground color.
+    export fn ghostty_surface_set_foreground_override(
+        surface: *Surface,
+        r: u8,
+        g: u8,
+        b: u8,
+        clear: bool,
+    ) void {
+        if (clear) {
+            surface.setForegroundOverride(null);
+        } else {
+            surface.setForegroundOverride(.{ .r = r, .g = g, .b = b });
+        }
     }
 
     /// Update the content scale of the surface.
