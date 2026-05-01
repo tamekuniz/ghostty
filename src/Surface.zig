@@ -4985,9 +4985,15 @@ pub fn setForegroundOverride(self: *Surface, rgb: ?terminal.color.RGB) !void {
         } else {
             self.io.terminal.colors.foreground.reset();
         }
+        // The renderer caches per-cell foreground colors that resolve `default`
+        // against terminal_state.colors.foreground. Without a top-level dirty
+        // flag, the RenderState.update path leaves redraw=false and never
+        // rebuilds those cells, so the cached color (e.g. the previous active
+        // override) keeps being drawn. `palette` is the closest existing flag
+        // that triggers a full rebuild; flipping it forces cells to recompute
+        // their colors against the new foreground value.
+        self.io.terminal.flags.dirty.palette = true;
     }
-    // Wake the renderer thread so the color change shows up immediately,
-    // matching what the OSC 10 message path achieves via surfaceMessageWriter.
     try self.queueRender();
 }
 
