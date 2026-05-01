@@ -4976,14 +4976,19 @@ pub fn colorSchemeCallback(self: *Surface, scheme: apprt.ColorScheme) !void {
 
 /// Override the per-surface foreground color, mirroring the OSC 10 path.
 /// Pass null to clear the override and revert to the configured foreground.
-pub fn setForegroundOverride(self: *Surface, rgb: ?terminal.color.RGB) void {
-    self.renderer_state.mutex.lock();
-    defer self.renderer_state.mutex.unlock();
-    if (rgb) |c| {
-        self.io.terminal.colors.foreground.set(c);
-    } else {
-        self.io.terminal.colors.foreground.reset();
+pub fn setForegroundOverride(self: *Surface, rgb: ?terminal.color.RGB) !void {
+    {
+        self.renderer_state.mutex.lock();
+        defer self.renderer_state.mutex.unlock();
+        if (rgb) |c| {
+            self.io.terminal.colors.foreground.set(c);
+        } else {
+            self.io.terminal.colors.foreground.reset();
+        }
     }
+    // Wake the renderer thread so the color change shows up immediately,
+    // matching what the OSC 10 message path achieves via surfaceMessageWriter.
+    try self.queueRender();
 }
 
 pub fn posToViewport(self: Surface, xpos: f64, ypos: f64) terminal.point.Coordinate {

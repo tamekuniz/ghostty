@@ -818,8 +818,8 @@ pub const Surface = struct {
         };
     }
 
-    pub fn setForegroundOverride(self: *Surface, rgb: ?terminal.color.RGB) void {
-        self.core_surface.setForegroundOverride(rgb);
+    pub fn setForegroundOverride(self: *Surface, rgb: ?terminal.color.RGB) !void {
+        try self.core_surface.setForegroundOverride(rgb);
     }
 
     pub fn mouseButtonCallback(
@@ -1770,9 +1770,13 @@ pub const CAPI = struct {
         clear: bool,
     ) void {
         if (clear) {
-            surface.setForegroundOverride(null);
+            surface.setForegroundOverride(null) catch |err| {
+                log.warn("error clearing foreground override err={}", .{err});
+            };
         } else {
-            surface.setForegroundOverride(.{ .r = r, .g = g, .b = b });
+            surface.setForegroundOverride(.{ .r = r, .g = g, .b = b }) catch |err| {
+                log.warn("error setting foreground override err={}", .{err});
+            };
         }
     }
 
